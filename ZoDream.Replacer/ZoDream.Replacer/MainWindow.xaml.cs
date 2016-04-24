@@ -1,7 +1,7 @@
 ﻿using System.Windows;
-using WPF_Replacer.ViewModel;
+using ZoDream.Replacer.ViewModel;
 
-namespace WPF_Replacer
+namespace ZoDream.Replacer
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

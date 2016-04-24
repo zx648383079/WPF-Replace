@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using GalaSoft.MvvmLight.Threading;
 
-namespace WPF_Replacer
+namespace ZoDream.Replacer
 {
     /// <summary>
     /// Interaction logic for App.xaml

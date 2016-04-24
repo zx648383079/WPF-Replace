@@ -1,7 +1,7 @@
 ﻿using System;
-using WPF_Replacer.Model;
+using ZoDream.Replacer.Model;
 
-namespace WPF_Replacer.Design
+namespace ZoDream.Replacer.Design
 {
     public class DesignDataService : IDataService
     {

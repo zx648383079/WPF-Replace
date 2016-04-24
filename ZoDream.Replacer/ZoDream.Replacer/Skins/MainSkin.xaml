@@ -14,9 +14,6 @@
         <Setter Property="Margin" Value="30,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
     </Style>
-    <Style TargetType="Expander">
-        <Setter Property="MaxHeight" Value="200"/>
-    </Style>
 
     <Style TargetType="CheckBox">
         <Setter Property="VerticalAlignment" Value="Center"/>

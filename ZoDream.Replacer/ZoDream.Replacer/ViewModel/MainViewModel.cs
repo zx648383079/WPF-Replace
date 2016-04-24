@@ -9,10 +9,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using WPF_Replacer.Model;
+using ZoDream.Replacer.Model;
 using ZoDream.Helper.Local;
 
-namespace WPF_Replacer.ViewModel
+namespace ZoDream.Replacer.ViewModel
 {
     /// <summary>
     /// This class contains properties that the main View can data bind to.
@@ -22,48 +22,35 @@ namespace WPF_Replacer.ViewModel
     /// </summary>
     public class MainViewModel : ViewModelBase
     {
-        private readonly IDataService _dataService;
-
-        /// <summary>
-        /// The <see cref="WelcomeTitle" /> property's name.
-        /// </summary>
-        public const string WelcomeTitlePropertyName = "WelcomeTitle";
-
-        private string _welcomeTitle = string.Empty;
-
-        /// <summary>
-        /// Gets the WelcomeTitle property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        public string WelcomeTitle
-        {
-            get
-            {
-                return _welcomeTitle;
-            }
-            set
-            {
-                Set(ref _welcomeTitle, value);
-            }
-        }
 
         /// <summary>
         /// Initializes a new instance of the MainViewModel class.
         /// </summary>
-        public MainViewModel(IDataService dataService)
+        public MainViewModel()
         {
-            _dataService = dataService;
-            _dataService.GetData(
-                (item, error) =>
-                {
-                    if (error != null)
-                    {
-                        // Report error here
-                        return;
-                    }
+        }
 
-                    WelcomeTitle = item.Title;
-                });
+        /// <summary>
+        /// The <see cref="Filter" /> property's name.
+        /// </summary>
+        public const string FilterPropertyName = "Filter";
+
+        private string _filter = @"^\.(php|js|css|txt|html|htm|tpl)$";
+
+        /// <summary>
+        /// Sets and gets the Filter property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public string Filter
+        {
+            get
+            {
+                return _filter;
+            }
+            set
+            {
+                Set(FilterPropertyName, ref _filter, value);
+            }
         }
 
         /// <summary>
@@ -347,11 +334,30 @@ namespace WPF_Replacer.ViewModel
                 return;
             }
             _showMessage("替换开始！");
-            foreach (var item in FileList)
+            _task();
+        }
+
+        private void _task()
+        {
+            Task.Factory.StartNew(() =>
+            {
+                foreach (var item in FileList)
+                {
+                    _runOne(item);
+                }
+                _showMessage("替换完成！");
+            });
+        }
+
+        private void _runOne(FileItem item)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
             {
                 item.Status = DealStatus.Wating;
-            }
-            var result = Parallel.ForEach(FileList,item =>
+            });
+            var status = DealStatus.Success;
+            var count = 0;
+            try
             {
                 var fs = new FileStream(item.FullName, FileMode.Open);
                 var encoder = new TxtEncoder();
@@ -361,17 +367,17 @@ namespace WPF_Replacer.ViewModel
                 foreach (var replace in ReplaceList)
                 {
                     var regex = new Regex(replace.Search);
-                    var count = regex.Matches(content).Count;
-                    if (count <= 0)
+                    var tmpcount = regex.Matches(content).Count;
+                    if (tmpcount <= 0)
                     {
                         continue;
                     }
-                    item.Count += count;
+                    count += tmpcount;
                     content = regex.Replace(content, replace.Replace);
                 }
-                if (item.Count <= 0)
+                if (count <= 0)
                 {
-                    return;
+                    goto end;
                 }
                 if (IsBak)
                 {
@@ -380,7 +386,63 @@ namespace WPF_Replacer.ViewModel
                 var writer = new StreamWriter(item.FullName, false, Encoding.UTF8);
                 writer.Write(content);
                 writer.Close();
-                item.Status = DealStatus.Success;
+            }
+            catch (Exception ex)
+            {
+                status = DealStatus.Failure;
+                _showMessage("可能原因：正则表达式错误!" + ex.Message);
+            }
+
+            end:
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                item.Status = status;
+                item.Count = count;
+            });
+        }
+
+        private void _parallel()
+        {
+            var result = Parallel.ForEach(FileList, item =>
+            {
+                item.Status = DealStatus.Wating;
+                try
+                {
+                    var fs = new FileStream(item.FullName, FileMode.Open);
+                    var encoder = new TxtEncoder();
+                    var reader = new StreamReader(fs, encoder.GetEncoding(fs));
+                    var content = reader.ReadToEnd();
+                    reader.Close();
+                    foreach (var replace in ReplaceList)
+                    {
+                        var regex = new Regex(replace.Search);
+                        var count = regex.Matches(content).Count;
+                        if (count <= 0)
+                        {
+                            continue;
+                        }
+                        item.Count += count;
+                        content = regex.Replace(content, replace.Replace);
+                    }
+                    if (item.Count <= 0)
+                    {
+                        return;
+                    }
+                    if (IsBak)
+                    {
+                        File.Copy(item.FullName, item.FullName + ".bak", true);
+                    }
+                    var writer = new StreamWriter(item.FullName, false, Encoding.UTF8);
+                    writer.Write(content);
+                    writer.Close();
+                    item.Status = DealStatus.Success;
+                }
+                catch (Exception ex)
+                {
+                    item.Status = DealStatus.Failure;
+                    _showMessage("可能原因：正则表达式错误!" + ex.Message);
+                }
             });
             Task.Factory.StartNew(() =>
             {
@@ -390,7 +452,6 @@ namespace WPF_Replacer.ViewModel
                 }
                 _showMessage("替换完成！");
             });
-            
         }
 
         private RelayCommand<int> _deleteCommand;
@@ -524,6 +585,29 @@ namespace WPF_Replacer.ViewModel
 
         }
 
+        private RelayCommand _resetCommand;
+
+        /// <summary>
+        /// Gets the ResetCommand.
+        /// </summary>
+        public RelayCommand ResetCommand
+        {
+            get
+            {
+                return _resetCommand
+                    ?? (_resetCommand = new RelayCommand(ExecuteResetCommand));
+            }
+        }
+
+        private void ExecuteResetCommand()
+        {
+            foreach (var item in FileList)
+            {
+                item.Status = DealStatus.None;
+                item.Count = 0;
+            }
+        }
+
         private RelayCommand<DragEventArgs> _fileDrogCommand;
 
         /// <summary>
@@ -549,7 +633,7 @@ namespace WPF_Replacer.ViewModel
             {
                 if (File.Exists(item))
                 {
-                    FileList.Add(new FileItem(item));
+                    _addOne(item);
                 }
                 else if (Directory.Exists(item))
                 {
@@ -563,7 +647,16 @@ namespace WPF_Replacer.ViewModel
         {
             foreach (var item in files)
             {
-                FileList.Add(new FileItem(item));
+                _addOne(item);
+            }
+        }
+
+        private void _addOne(string file)
+        {
+            var item = new FileItem(file);
+            if (Regex.IsMatch(item.Extension, Filter))
+            {
+                FileList.Add(item);
             }
         }
 

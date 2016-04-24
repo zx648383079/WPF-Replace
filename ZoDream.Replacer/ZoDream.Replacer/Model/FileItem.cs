@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WPF_Replacer.Model
+namespace ZoDream.Replacer.Model
 {
     public class FileItem : ObservableObject
     {

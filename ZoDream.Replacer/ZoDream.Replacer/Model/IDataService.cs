@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace WPF_Replacer.Model
+namespace ZoDream.Replacer.Model
 {
     public interface IDataService
     {

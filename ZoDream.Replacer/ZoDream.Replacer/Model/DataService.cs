@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace WPF_Replacer.Model
+namespace ZoDream.Replacer.Model
 {
     public class DataService : IDataService
     {
