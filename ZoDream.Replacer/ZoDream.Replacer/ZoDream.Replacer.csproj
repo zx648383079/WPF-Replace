@@ -73,7 +73,8 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="ZoDream.Helper">
+    <Reference Include="ZoDream.Helper, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\WPF-ZoDream\ZoDream.Helper\ZoDream.Helper\bin\Debug\ZoDream.Helper.dll</HintPath>
     </Reference>
   </ItemGroup>

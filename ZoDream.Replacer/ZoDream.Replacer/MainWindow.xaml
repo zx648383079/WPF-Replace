@@ -44,19 +44,31 @@
                     <TextBox Grid.Column="2" Text="{Binding Replace}"/>
                     <Button Content="添加" Grid.Column="3" Command="{Binding AddCommand}"/>
 
-                    <ListView Grid.Row="1" Grid.ColumnSpan="4" x:Name="ReplaceList" ItemsSource="{Binding ReplaceList}">
+                    <ListView AllowDrop="True" Grid.Row="1" Grid.ColumnSpan="4" 
+                              x:Name="ReplaceList" ItemsSource="{Binding ReplaceList}">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn Header="搜索" Width="300" DisplayMemberBinding="{Binding Path=Search}"/>
                                 <GridViewColumn Header="替换" Width="300" DisplayMemberBinding="{Binding Path=Replace}"/>
                             </GridView>
                         </ListView.View>
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Drop">
+                                <command:EventToCommand Command="{Binding ReplaceDrogCommand, Mode=OneWay}"
+                                    PassEventArgsToCommand="True" />
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
                         <ListView.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="规则">
+                                    <MenuItem Header="载入" Command="{Binding OpenReplaceCommand}"/>
+                                    <MenuItem Header="保存" Command="{Binding SaveReplaceCommand}"/>
+                                </MenuItem>
                                 <MenuItem Header="上移" Command="{Binding MoveUpCommand}" CommandParameter="{Binding ElementName=ReplaceList,Path=SelectedIndex}"/>
                                 <MenuItem Header="下移" Command="{Binding MoveDownCommand}" CommandParameter="{Binding ElementName=ReplaceList,Path=SelectedIndex}"/>
                                 <MenuItem Header="删除" Command="{Binding DeleteReplaceCommand}" CommandParameter="{Binding ElementName=ReplaceList,Path=SelectedIndex}"/>
                                 <MenuItem Header="清空" Command="{Binding ClearReplaceCommand}"/>
+                                <MenuItem Header="测试" Command="{Binding TestReplaceCommand}"/>
                             </ContextMenu>
                         </ListView.ContextMenu>
                     </ListView>

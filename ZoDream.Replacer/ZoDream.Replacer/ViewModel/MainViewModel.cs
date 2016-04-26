@@ -383,9 +383,7 @@ namespace ZoDream.Replacer.ViewModel
                 {
                     File.Copy(item.FullName, item.FullName + ".bak", true);
                 }
-                var writer = new StreamWriter(item.FullName, false, Encoding.UTF8);
-                writer.Write(content);
-                writer.Close();
+                Open.Writer(item.FullName, content);
             }
             catch (Exception ex)
             {
@@ -433,7 +431,8 @@ namespace ZoDream.Replacer.ViewModel
                     {
                         File.Copy(item.FullName, item.FullName + ".bak", true);
                     }
-                    var writer = new StreamWriter(item.FullName, false, Encoding.UTF8);
+                    var utf8 =new UTF8Encoding(false);
+                    var writer = new StreamWriter(item.FullName, false, utf8);
                     writer.Write(content);
                     writer.Close();
                     item.Status = DealStatus.Success;
@@ -628,7 +627,7 @@ namespace ZoDream.Replacer.ViewModel
             {
                 return;
             }
-            Array files = (System.Array)parameter.Data.GetData(DataFormats.FileDrop);
+            var files = (Array)parameter.Data.GetData(DataFormats.FileDrop);
             foreach (string item in files)
             {
                 if (File.Exists(item))
@@ -643,11 +642,122 @@ namespace ZoDream.Replacer.ViewModel
             _showMessage($"总共有{FileList.Count}个文件！");
         }
 
+        private RelayCommand<DragEventArgs> _replaceDrogCommand;
+
+        /// <summary>
+        /// Gets the ReplaceDrogCommand.
+        /// </summary>
+        public RelayCommand<DragEventArgs> ReplaceDrogCommand
+        {
+            get
+            {
+                return _replaceDrogCommand
+                    ?? (_replaceDrogCommand = new RelayCommand<DragEventArgs>(ExecuteReplaceDrogCommand));
+            }
+        }
+
+        private void ExecuteReplaceDrogCommand(DragEventArgs parameter)
+        {
+            if (parameter == null)
+            {
+                return;
+            }
+            var files = (string[])parameter.Data.GetData(DataFormats.FileDrop);
+            if (files.Length < 1) return;
+            _openReplace(files[0]);
+        }
+
+        private void _openReplace(string file)
+        {
+            var content = Open.Read(file);
+            var matches = Regex.Matches(content, @"(.*)替换为(.*)");
+            foreach (Match item in matches)
+            {
+                ReplaceList.Add(new ReplaceItem(item.Groups[1].Value, item.Groups[2].Value));
+            }
+        }
+
+        private RelayCommand _openReplaceCommand;
+
+        /// <summary>
+        /// Gets the OpenReplaceCommand.
+        /// </summary>
+        public RelayCommand OpenReplaceCommand
+        {
+            get
+            {
+                return _openReplaceCommand
+                    ?? (_openReplaceCommand = new RelayCommand(ExecuteOpenReplaceCommand));
+            }
+        }
+
+        private void ExecuteOpenReplaceCommand()
+        {
+            _openReplace(Open.ChooseFile());
+        }
+
+        private RelayCommand _saveReplaceCommand;
+
+        /// <summary>
+        /// Gets the SaveReplaceCommand.
+        /// </summary>
+        public RelayCommand SaveReplaceCommand
+        {
+            get
+            {
+                return _saveReplaceCommand
+                    ?? (_saveReplaceCommand = new RelayCommand(ExecuteSaveReplaceCommand));
+            }
+        }
+
+        private void ExecuteSaveReplaceCommand()
+        {
+            var file = Open.ChooseSaveFile();
+            if (string.IsNullOrEmpty(file)) return;
+            using(var writer = new StreamWriter(file, false, Encoding.UTF8))
+            {
+                foreach (var item in ReplaceList)
+                {
+                    writer.WriteLine($"{item.Search}替换为{item.Replace}");
+                }
+            }
+        }
+
         private void _addFile(IList<string> files)
         {
             foreach (var item in files)
             {
                 _addOne(item);
+            }
+        }
+
+        private RelayCommand _testReplaceCommand;
+
+        /// <summary>
+        /// Gets the TestReplaceCommand.
+        /// </summary>
+        public RelayCommand TestReplaceCommand
+        {
+            get
+            {
+                return _testReplaceCommand
+                    ?? (_testReplaceCommand = new RelayCommand(ExecuteTestReplaceCommand));
+            }
+        }
+
+        private void ExecuteTestReplaceCommand()
+        {
+            for (int i = 0; i < ReplaceList.Count; i++)
+            {
+                try
+                {
+                    var regex = new Regex(ReplaceList[i].Search);
+                }
+                catch (Exception ex)
+                {
+                    _showMessage($"第 {i} 条存在问题！{ex.Message}");
+                    return;
+                }
             }
         }
 
