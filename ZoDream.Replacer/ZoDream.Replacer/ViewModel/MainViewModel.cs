@@ -373,7 +373,14 @@ namespace ZoDream.Replacer.ViewModel
                         continue;
                     }
                     count += tmpcount;
-                    content = regex.Replace(content, replace.Replace);
+                    var replaceString = replace.Replace.Replace("\\n", "\n")
+                        .Replace("\\r", "\r")
+                        .Replace("\\t", "\t")
+                        .Replace("\\xa1", "\xa1")
+                        .Replace("\\xa2", "\xa2")
+                        .Replace("\\xa3", "\xa3")
+                        .Replace("\\xa9", "\xa9");
+                    content = regex.Replace(content, replaceString);
                 }
                 if (count <= 0)
                 {
